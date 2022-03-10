@@ -61,7 +61,7 @@ def get_api_answer(current_timestamp):
             f"Ошибка статуса: {response.status_code}"
         )
     else:
-        raise requests.exceptions.InvalidURL(f"Проблема с запросом к URL")
+        raise requests.exceptions.InvalidURL("Проблема с запросом к URL")
 
 
 def check_response(response):
@@ -77,8 +77,8 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Получаем наименование и статус домашней работы.
-    Формируем текст с полученными данными для отправки."""
+    """Получаем наименование и статус домашней работы."""
+    """Формируем текст с полученными данными для отправки."""
     if "homework_name" not in homework:
         logger.error("API ответ не содержит ключ homework_name.")
         raise KeyError("API ответ не содержит ключ homework_name.")
@@ -96,17 +96,19 @@ def parse_status(homework):
 
 
 def check_tokens():
-    "Проверка доступности переменных окружения."
+    """Проверка доступности переменных окружения."""
     if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID is not None:
         return True
     else:
         logger.critical(
-            "Отсутствие обязательных переменных окружения. Программа принудительно остановлена."
+            "Отсутствие обязательных переменных окружения. "
+            "Программа принудительно остановлена."
         )
 
 
 def main():
-
+    """Основная функция. Проверяет верность токенов."""
+    """Раз в 10 минут делает запрос к ENDPOINT."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     main_error = ""
