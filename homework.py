@@ -55,8 +55,8 @@ def get_api_answer(current_timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except requests.exceptions.RequestException as error:
-        logger.error(f"Проблема с запросом к URL")
-        raise error
+        logger.error(f"Проблема с запросом к URL {error}")
+        raise error("Проблема с запросом к URL")
 
     try:
         response.status_code == HTTPStatus.OK
