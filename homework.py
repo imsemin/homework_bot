@@ -1,4 +1,3 @@
-import copy
 import logging
 import os
 import sys
@@ -44,34 +43,44 @@ def send_message(bot, message):
     try:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
         logger.info("Сообщение отправлено")
-    except Exception as error:
+    except telegram.TelegramError as error:
         logger.error(f"Сообщение не отправлено по причине: {error}")
+        raise error("Сообщение не отправлено")
 
 
 def get_api_answer(current_timestamp):
     """API запрос к ресурсу."""
     timestamp = current_timestamp or int(time.time())
     params = {"from_date": timestamp}
-    response = requests.get(ENDPOINT, headers=HEADERS, params=params)
-    if response.status_code == HTTPStatus.OK:
-        return response.json()
-    elif response.status_code != HTTPStatus.OK:
+    try:
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+    except requests.exceptions.RequestException as error:
+        logger.error(f"Проблема с запросом к URL")
+        raise error
+
+    try:
+        response.status_code == HTTPStatus.OK
+    except requests.exceptions.HTTPError as error:
         logger.error(f"Ошибка статуса: {response.status_code}")
-        raise requests.exceptions.HTTPError(
-            f"Ошибка статуса: {response.status_code}"
-        )
-    else:
-        raise requests.exceptions.InvalidURL("Проблема с запросом к URL")
+        raise error(f"Ошибка статуса: {response.status_code}")
+
+    try:
+        return response.json()
+    except requests.exceptions.JSONDecodeError as error:
+        logger.error(f"Не удалось преобразовать в формат .json {error}")
+        raise error("Не удалось преобразовать в формат .json")
 
 
 def check_response(response):
     """Проверка ответа API."""
-    if type(response) != dict:
-        raise TypeError("Ответ API не соответствует типу данных Python")
-    elif type(response["homeworks"]) != list:
-        raise TypeError("Ответ API не является списком")
+    if type(response) is not dict:
+        raise TypeError("Ответ API не соответствует типу данных Python.")
+    elif type(response["homeworks"]) is not list:
+        raise TypeError("Ответ API не является списком.")
+    elif "homeworks" not in response:
+        raise KeyError("В API ответе отсутствует запрашиваемый ключ.")
     elif len(response["homeworks"]) == 0:
-        logger.info("Отсутствует актуальное домашнее задание")
+        logger.info("Отсутствует актуальное домашнее задание.")
     else:
         return response["homeworks"]
 
@@ -111,7 +120,6 @@ def main():
     """Раз в 10 минут делает запрос к ENDPOINT."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    main_error = ""
 
     if not check_tokens():
         raise ex.TokenError("Отсутствие обязательных переменных окружения.")
@@ -128,11 +136,7 @@ def main():
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
-            if str(error) != str(main_error):
-                send_message(bot, message)
-            else:
-                logger.info(f"Ошибка {error} не исправлена")
-            main_error = copy.deepcopy(error)
+            send_message(bot, message)
             time.sleep(RETRY_TIME)
 
 
