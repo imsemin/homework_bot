@@ -77,7 +77,7 @@ def check_response(response):
     if type(response) is not dict:
         raise TypeError("Ответ API не соответствует типу данных Python.")
     elif "homeworks" not in response:
-        raise KeyError("В API ответе отсутствует запрашиваемый ключ.")    
+        raise KeyError("В API ответе отсутствует запрашиваемый ключ.")
     elif type(response["homeworks"]) is not list:
         raise TypeError("Ответ API не является списком.")
     elif len(response["homeworks"]) == 0:
